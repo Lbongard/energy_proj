@@ -11,6 +11,9 @@ import glob
 import os
 from datetime import datetime
 from functools import reduce
+import requests
+import json
+from io import StringIO 
 
 ##### Import all LMP files and combine into a single DataFrame #####
 
@@ -109,6 +112,23 @@ df_list = [hourly_rt_df, da_df, hourly_load_df, renew_df]
 df = reduce(lambda left, right: pd.merge(left, right, 
                                            left_index=True, 
                                            right_index=True), df_list)
+
+
+## Importing Weather Data ##
+
+# Check if hourly normals is right
+base_url = "https://www.ncei.noaa.gov/access/services/data/v1/?dataset=normals-hourly"
+data_types = "&datatypes=HLY-CLDH-NORMAL, HLY-HTDH-NORMAL, HLY-TEMP-NORMAL"
+# Stations include LAX airport, San Diego Int'l Airport, and Long Beach Airport
+stations="&stations=USW00023174,USW00023188,USW00023129"
+dates="&startDate=2022-08-01&endDate=2022-09-04"
+bounding_box="&boundingBox=90,-180,-90,180"
+units="&units=standard"
+
+query_str = base_url+data_types+stations+dates+bounding_box+units
+
+r = requests.get(query_str)
+weather_df = pd.read_csv(StringIO(r.text))
 
 
 #### Feature Engineering ####
